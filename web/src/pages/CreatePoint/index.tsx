@@ -136,7 +136,7 @@ const CreatePoint = () => {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
 
-    const { name, email, whatsapp } = formData
+    let { name, email, whatsapp } = formData
     const uf = selectedUF
     const city = selectedCity
     const [ latitude, longitude ] = selectedPosition
@@ -147,6 +147,7 @@ const CreatePoint = () => {
       return
     }
 
+    whatsapp = Number('+55') + whatsapp
     const data = {
       name,
       email,
