@@ -105,4 +105,4 @@ dist
 
 *.txt
 *.pdf
-uploads/*.svg
+uploads/*
