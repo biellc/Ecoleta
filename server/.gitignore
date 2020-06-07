@@ -107,3 +107,4 @@ dist
 *.pdf
 uploads/*
 !uploads/.gitkeep
+database/database.sqlite
