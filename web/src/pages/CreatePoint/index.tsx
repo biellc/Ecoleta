@@ -6,6 +6,8 @@ import axios from 'axios'
 import { LeafletMouseEvent } from 'leaflet'
 import api from '../../services/api'
 
+import DropZone from '../../components/DropZone'
+
 import './styles.css'
 
 import logo from '../../assets/logo.svg'
@@ -32,7 +34,7 @@ const CreatePoint = () => {
   const [cities, setCities] = useState<string[]>([])
 
   const [initialPosition, setInitialPosition] = useState<[number, number]>([0, 0])
-  
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -43,6 +45,7 @@ const CreatePoint = () => {
   const [selectedCity, setSelectedCity] = useState<string>("0")
   const [selectedItems, setSelectedItems] = useState<number[]>([])
   const [selectedPosition, setSelectedPosition] = useState<[number, number]>([0, 0])
+  const [selectedFile, setSelectedFile] = useState<File>()
 
   const history = useHistory()
 
@@ -72,12 +75,12 @@ const CreatePoint = () => {
     if (selectedUF === "0") return
 
     axios
-    .get<IBGECityResponse[]>(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${selectedUF}/municipios`)
-    .then(response => {
-      const cityNames = response.data.map(city => city.nome)
+      .get<IBGECityResponse[]>(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${selectedUF}/municipios`)
+      .then(response => {
+        const cityNames = response.data.map(city => city.nome)
 
-      setCities(cityNames)
-    })
+        setCities(cityNames)
+      })
   }, [selectedUF])
 
   function handleSelectUF(e: ChangeEvent<HTMLSelectElement>) {
@@ -85,7 +88,7 @@ const CreatePoint = () => {
 
     setSelectedUF(uf)
   }
-  
+
   function handleSelectCity(e: ChangeEvent<HTMLSelectElement>) {
     const city = e.target.value
 
@@ -103,7 +106,7 @@ const CreatePoint = () => {
     const { name, value } = e.target
 
     setFormData({ ...formData, [name]: value })
-  } 
+  }
 
   function handleSelectItem(id: number) {
     const alreadySelected = selectedItems.findIndex(item => item === id)
@@ -117,7 +120,7 @@ const CreatePoint = () => {
   }
 
   function handleVerifyData() {
-    const [ latitude, longitude ] = selectedPosition
+    const [latitude, longitude] = selectedPosition
     if (latitude === 0 || longitude === 0) {
       alert('Selecione no mapa o local do seu ponto de coleta')
       return true
@@ -139,7 +142,7 @@ const CreatePoint = () => {
     let { name, email, whatsapp } = formData
     const uf = selectedUF
     const city = selectedCity
-    const [ latitude, longitude ] = selectedPosition
+    const [latitude, longitude] = selectedPosition
     const items = selectedItems
 
     const res = handleVerifyData()
@@ -148,19 +151,24 @@ const CreatePoint = () => {
     }
 
     whatsapp = Number('+55') + whatsapp
-    const data = {
-      name,
-      email,
-      whatsapp,
-      uf,
-      city,
-      latitude,
-      longitude,
-      items
+
+    const data = new FormData()
+
+    data.append('name', name)
+    data.append('email', email)
+    data.append('whatsapp', whatsapp)
+    data.append('uf', uf)
+    data.append('city', city)
+    data.append('latitude', String(latitude))
+    data.append('longitude', String(longitude))
+    data.append('items', items.join(','))
+    
+    if (selectedFile) {
+      data.append('image', selectedFile)
     }
 
     await api.post('points', data)
-    
+
     alert(`O (A) ${name} foi criado com sucesso!`)
     history.push('/')
   }
@@ -178,6 +186,8 @@ const CreatePoint = () => {
 
       <form onSubmit={handleSubmit}>
         <h1>Cadastro do <br /> ponto de coleta</h1>
+
+        <DropZone onFileUploaded={setSelectedFile} />
 
         <fieldset>
           <legend>
@@ -265,8 +275,8 @@ const CreatePoint = () => {
 
           <ul className="items-grid">
             {items.map(item => (
-              <li 
-                key={item.id} 
+              <li
+                key={item.id}
                 onClick={() => handleSelectItem(item.id)}
                 className={selectedItems.includes(item.id) ? 'selected' : ''}
               >
